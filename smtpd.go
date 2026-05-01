@@ -36,14 +36,13 @@ import (
 	"unicode"
 )
 
-// TimeFmt is the time format we log messages in.
-const TimeFmt = "2006-01-02 15:04:05 -0700"
+// Time format for logging
+const TimeFmt = "2006-01-02_15:04:05-0700"
 
-// Command represents known SMTP commands in encoded form.
+// Known SMTP commands (encoded)
 type Command int
 
-// Recognized SMTP commands. Not all of them do anything
-// (e.g. VRFY and EXPN are just refused).
+// Recognized SMTP commands (VRFY and EXPN are refused)
 const (
 	noCmd  Command = iota // artificial zero value
 	BadCmd Command = iota
@@ -62,20 +61,15 @@ const (
 	STARTTLS
 )
 
-// ParsedLine represents a parsed SMTP command line.  Err is set if
-// there was an error, empty otherwise. Cmd may be BadCmd or a
-// command, even if there was an error.
+// Parsed SMTP command line, Err is empty if no error
 type ParsedLine struct {
 	Cmd Command
 	Arg string
-	// Params is K=V for ESMTP MAIL FROM and RCPT TO
-	// or the initial SASL response for AUTH
+	// Params is K=V for ESMTP MAIL FROM and RCPT TO or the initial SASL response for AUTH
+	// See <www.ietf.org/rfc/rfc1869.txt> for a general discussion of params (not parsed here)
 	Params string
 	Err    string
 }
-
-// See http://www.ietf.org/rfc/rfc1869.txt for the general discussion of
-// params. We do not parse them.
 
 type cmdArgs int
 
@@ -84,11 +78,10 @@ const (
 	canArg
 	mustArg
 	oneOrTwoArgs
-	colonAddress // for ':<addr>[ options...]'
+	colonAddress  // for ':<addr>[ options...]'
 )
 
-// Our ideal of what requires an argument is slightly relaxed from the
-// RFCs, ie we will accept argumentless HELO/EHLO.
+// Argumentless HELO/EHLO are accepted (relaxed from RFCs)
 var smtpCommand = []struct {
 	cmd     Command
 	text    string
@@ -107,13 +100,12 @@ var smtpCommand = []struct {
 	{HELP, "HELP", canArg},
 	{STARTTLS, "STARTTLS", noArg},
 	{AUTH, "AUTH", oneOrTwoArgs},
-	// TODO: do I need any additional SMTP commands?
 }
 
 func (v Command) String() string {
 	switch v {
 	case noCmd:
-		return "<zero Command value>"
+		return "<no Command>"
 	case BadCmd:
 		return "<bad SMTP command>"
 	default:
@@ -122,7 +114,6 @@ func (v Command) String() string {
 				return fmt.Sprintf("<SMTP '%s'>", c.text)
 			}
 		}
-		// ... because someday I may screw this one up.
 		return fmt.Sprintf("<Command cmd val %d>", v)
 	}
 }
@@ -148,7 +139,7 @@ func ParseCmd(line string) ParsedLine {
 	// We're going to upper-case this, which may explode on us if this
 	// is UTF-8 or anything that smells like it.
 	if !isall7bit([]byte(line)) {
-		res.Err = "command contains non 7-bit ASCII"
+		res.Err = "command contains non 7-bit"
 		return res
 	}
 
@@ -297,7 +288,6 @@ const (
 	sRcpt
 	sData
 	sQuit // QUIT received and ack'd, we're exiting.
-
 	// Synthetic state
 	sPostData
 	sAbort
@@ -389,21 +379,16 @@ type Conn struct {
 	lr     *io.LimitedReader // wraps conn as a reader
 	rdr    *textproto.Reader // wraps lr
 	logger io.Writer
-
 	Config Config // Connection configuration
-
 	state         conState
 	badcmds       int  // count of bad commands so far
 	authenticated bool // true after successful auth dialog
-
 	// queued event returned by a forthcoming Next call
 	nextEvent *EventInfo
-
 	// used for state tracking for Accept()/Reject()/Tempfail().
 	curcmd  Command
 	replied bool
 	nstate  conState // next state if command is accepted.
-
 	TLSOn    bool                // TLS is on in this connection
 	TLSState tls.ConnectionState // TLS connection state
 }
@@ -613,16 +598,16 @@ func (c *Conn) Accept() {
 		c.authDone(true)
 		c.reply("235 Authentication successful")
 	case MAILFROM, RCPTTO:
-		c.reply("250 Okay, I'll believe you for now")
+		c.reply("250 Accepted")
 	case DATA:
 		// c.curcmd == DATA both when we've received the
 		// initial DATA and when we've actually received the
 		// data-block. We tell them apart based on the old
 		// state, which is sRcpt or sPostData respectively.
 		if oldstate == sRcpt {
-			c.reply("354 Send away")
+			c.reply("354 Send data")
 		} else {
-			c.reply("250 I've put it in a can")
+			c.reply("250 Delivered")
 		}
 	}
 	c.replied = true
@@ -666,7 +651,7 @@ func (c *Conn) AcceptData(id string) {
 		return
 	}
 	c.state = c.nstate
-	c.reply("250 I've put it in a can called %s", id)
+	c.reply("250 Delivered to %s", id)
 	c.replied = true
 }
 
@@ -676,7 +661,7 @@ func (c *Conn) RejectData(id string) {
 	if c.replied || c.curcmd != DATA || c.state != sPostData {
 		return
 	}
-	c.reply("554 Not put in a can called %s", id)
+	c.reply("554 Not delivered to %s", id)
 	c.replied = true
 }
 

@@ -1,6 +1,9 @@
 version: 2
 
-builds: []
+project_name: smtpd
+
+builds:
+  - skip: true
 
 changelog:
   sort: asc

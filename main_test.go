@@ -1,5 +1,4 @@
-//
-// Let's see if I can write Go tests
+// Tests
 
 package smtpd
 
@@ -88,7 +87,7 @@ var smtpInvalidTests = []struct {
 	{"argble", BadCmd, ""},
 	// UTF-8, and I want to test that this is specifically recognized
 	// in an otherwise valid command
-	{"MAIL FROM:<Å@fred.com>", BadCmd, "command contains non 7-bit ASCII"},
+	{"MAIL FROM:<Å@fred.com>", BadCmd, "command contains non 7-bit"},
 
 	// prefix validation
 	{"VRFYFred", BadCmd, ""},
@@ -238,19 +237,19 @@ RCPT TO:<e@f.com>
 HELO
 QUIT
 `
-var basicServer = `220 localhost go-smtpd
+var basicServer = `220 localhost smtpd v` + version + `
 250-localhost Hello 127.10.10.100:56789
 250-8BITMIME
 250-PIPELINING
 250 HELP
-250 Okay, I'll believe you for now
-250 Okay, I'll believe you for now
-354 Send away
-250 I've put it in a can
-250 Okay, I'll believe you for now
-250 Okay, I'll believe you for now
-354 Send away
-250 I've put it in a can
+250 Accepted
+250 Accepted
+354 Send data
+250 Delivered
+250 Accepted
+250 Accepted
+354 Send data
+250 Delivered
 503 Out of sequence command
 250 localhost Hello 127.10.10.100:56789
 221 Goodbye
@@ -281,7 +280,7 @@ RCPT TO:<>
 RCPT TO:<abc@def>
 RCPT TO:<abc@ghi> SIZE=9999
 `
-var sequenceServer = `220 localhost go-smtpd
+var sequenceServer = `220 localhost smtpd v` + version + `
 503 Out of sequence command
 250 Okay
 503 Out of sequence command
@@ -291,13 +290,13 @@ var sequenceServer = `220 localhost go-smtpd
 250 HELP
 250 Okay
 503 Out of sequence command
-250 Okay, I'll believe you for now
+250 Accepted
 503 Out of sequence command
 501 Bad: unrecognized command
 250 Okay
-250 Okay, I'll believe you for now
+250 Accepted
 550 Bad address
-250 Okay, I'll believe you for now
+250 Accepted
 504 Command parameter not implemented
 `
 
@@ -365,7 +364,7 @@ AUTH TEST initial-auth-resp
 MAIL FROM:<a@b.com>
 QUIT
 `
-var authServer1 = `220 localhost go-smtpd
+var authServer1 = `220 localhost smtpd v` + version + `
 250-localhost Hello 127.10.10.100:56789
 250-8BITMIME
 250-PIPELINING
@@ -426,7 +425,7 @@ AUTH TEST
 AUTH TEST
 QUIT
 `
-var authServer2 = `220 localhost go-smtpd
+var authServer2 = `220 localhost smtpd v` + version + `
 250-localhost Hello 127.10.10.100:56789
 250-8BITMIME
 250-PIPELINING
@@ -462,7 +461,7 @@ c3Vic2VxdWVudC1yZXNwb25zZQ==
 ZmluYWwtcmVzcG9uc2U=
 QUIT
 `
-var authServer3 = `220 localhost go-smtpd
+var authServer3 = `220 localhost smtpd v` + version + `
 250-localhost Hello 127.10.10.100:56789
 250-8BITMIME
 250-PIPELINING
@@ -536,7 +535,7 @@ AUTH TEST =
 *
 QUIT
 `
-var authServer4 = `220 localhost go-smtpd
+var authServer4 = `220 localhost smtpd v` + version + `
 250-localhost Hello 127.10.10.100:56789
 250-8BITMIME
 250-PIPELINING

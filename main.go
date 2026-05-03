@@ -18,9 +18,9 @@
 // limits on input messages (and input lines, but that's much larger
 // than the RFC requires so it shouldn't matter). See DefaultLimits
 // and SetLimits().
-package smtpd
-
 // See http://en.wikipedia.org/wiki/Extended_SMTP#Extensions
+
+package smtpd
 
 import (
 	"bufio"
@@ -35,6 +35,8 @@ import (
 	"time"
 	"unicode"
 )
+
+const version = "0.1.0"
 
 // Time format for logging
 const TimeFmt = "2006-01-02_15:04:05-0700"
@@ -78,7 +80,7 @@ const (
 	canArg
 	mustArg
 	oneOrTwoArgs
-	colonAddress  // for ':<addr>[ options...]'
+	colonAddress // for ':<addr>[ options...]'
 )
 
 // Argumentless HELO/EHLO are accepted (relaxed from RFCs)
@@ -375,20 +377,20 @@ type Config struct {
 // is a pointer and so its fields should not be altered unless you
 // know what you're doing and it's your Limits to start with.
 type Conn struct {
-	conn   net.Conn
-	lr     *io.LimitedReader // wraps conn as a reader
-	rdr    *textproto.Reader // wraps lr
-	logger io.Writer
-	Config Config // Connection configuration
+	conn          net.Conn
+	lr            *io.LimitedReader // wraps conn as a reader
+	rdr           *textproto.Reader // wraps lr
+	logger        io.Writer
+	Config        Config // Connection configuration
 	state         conState
 	badcmds       int  // count of bad commands so far
 	authenticated bool // true after successful auth dialog
 	// queued event returned by a forthcoming Next call
 	nextEvent *EventInfo
 	// used for state tracking for Accept()/Reject()/Tempfail().
-	curcmd  Command
-	replied bool
-	nstate  conState // next state if command is accepted.
+	curcmd   Command
+	replied  bool
+	nstate   conState            // next state if command is accepted.
 	TLSOn    bool                // TLS is on in this connection
 	TLSState tls.ConnectionState // TLS connection state
 }
@@ -830,8 +832,7 @@ func (c *Conn) Next() EventInfo {
 		var announce string
 		c.state = sInitial
 		// log precedes the banner in case the banner hits an error.
-		c.log("#", "remote %v at %s", c.conn.RemoteAddr(),
-			time.Now().Format(TimeFmt))
+		c.log("#", "remote %v at %s", c.conn.RemoteAddr(), time.Now().Format(TimeFmt))
 		if c.Config.Announce != "" {
 			announce = "\n" + c.Config.Announce
 		}
@@ -1217,7 +1218,7 @@ func NewConn(conn net.Conn, cfg Config, log io.Writer) *Conn {
 		c.Config.Limits = &DefaultLimits
 	}
 	if c.Config.SftName == "" {
-		c.Config.SftName = "go-smtpd"
+		c.Config.SftName = "smtpd v" + version
 	}
 	if c.Config.LocalName == "" {
 		c.Config.LocalName = "localhost"

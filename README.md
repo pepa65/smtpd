@@ -1,7 +1,7 @@
-# smtpd
+# smtpd v0.1.0
 
-* License: GPLv3
 * Repo: https://github.com/pepa65/smtpd
+* License: GPLv3
 * After: https://github.com/siebenmann/smtpd
 
 Smtpd is a Go package for handling the server side of the SMTP protocol.
@@ -17,7 +17,7 @@ of SMTP; it makes no attempt to provide the facilities you'd need to
 write a server.
 
 The package `github.com/pepa65/sinksmtp` depends on `smtpd`, and just
-logs and perhaps writes it to disk.
+logs and optionally writes it to disk.
 
 Because of its origin as the core engine of a sinkhole SMTP server,
 `smtpd` is pretty casual about a lot of things in the SMTP protocol
